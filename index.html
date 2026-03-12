@@ -50,10 +50,13 @@
         <div class="logo" aria-hidden="true"></div>
         <div>
           <h1>Online Dergi Öneri Formu</h1>
-          <p class="sub">Başvuru değil — sadece öneri toplamak için basit form. Gönderim: <span class="k">e‑posta</span> veya <span class="k">Formspree</span>/<span class="k">Google Apps Script</span> ile.</p>
+          <p class="sub">Başvuru değil — sadece öneri toplamak için basit form. <b>Tek tık “Gönder”</b> ile öneriler <span class="k">Google Sheets</span>’e kaydedilir (Google Apps Script Web App).</p>
         </div>
       </div>
-      <div class="pill" role="status" aria-live="polite"><span class="dot" id="stateDot" aria-hidden="true"></span><span id="stateText">Hazır</span></div>
+      <div class="pill" role="status" aria-live="polite">
+        <span class="dot" id="stateDot" aria-hidden="true"></span>
+        <span id="stateText">Hazır</span>
+      </div>
     </header>
 
     <div class="card">
@@ -76,7 +79,7 @@
 
           <div class="row">
             <div>
-              <label for="email">E‑posta</label>
+              <label for="email">E-posta</label>
               <input id="email" name="email" type="email" placeholder="ad.soyad@uni.edu.tr" />
             </div>
             <div>
@@ -110,7 +113,7 @@
           </div>
 
           <div class="actions">
-            <div class="hint">Gönderim seçeneği: <span class="k">E‑posta</span> (varsayılan) veya aşağıda API endpoint ekleyin.</div>
+            <div class="hint">Kurulum: <span class="k">SECRET_TOKEN</span>’u değiştirin ve Apps Script’teki TOKEN ile aynı yapın.</div>
             <div style="display:flex;gap:10px;flex-wrap:wrap">
               <button type="button" class="ghost" id="btnCopy">Kopyala</button>
               <button type="button" class="ghost" id="btnDraft">Taslak Kaydet</button>
@@ -124,9 +127,7 @@
           <div class="preview" id="preview" aria-label="Önizleme"></div>
 
           <footer>
-            <b>GitHub Pages:</b> Repo’ya bu dosyayı <span class="k">index.html</span> olarak koyun → Settings → Pages → Deploy.
-            <br/>
-            <b>İsterseniz:</b> <span class="k">FORM_ENDPOINT</span> değişkenine Formspree / Apps Script URL’si koyup (POST) gerçek kayda çevirebilirsiniz.
+            <b>Google Sheets:</b> Gönder butonu Apps Script Web App’e POST atar ve Sheet’e satır ekler.
           </footer>
         </form>
       </div>
@@ -135,14 +136,11 @@
 
   <script>
     (function(){
-      // 1) Basit kurulum:
-      // - Varsayılan: mailto ile e-posta oluşturur.
-      // 2) İsterseniz gerçek kayda çevirin:
-      // - FORM_ENDPOINT = "https://formspree.io/f/xxxx" gibi bir URL verin.
-      // - Endpoint JSON kabul ediyorsa fetch ile gönderir.
+      // Google Sheets entegrasyonu (GitHub Pages uyumlu)
+      // NOT: no-cors ile gönderiyoruz; tarayıcı cevap okuyamaz ama Sheet'e yazma çalışır.
 
-      const FORM_ENDPOINT = ""; // <- Buraya Formspree / Apps Script endpoint’i ekleyin (opsiyonel)
-      const MAIL_TO = "hilal.yilmaz@csb.gov.tr,hilal4483@gmail.com"; // Alıcı(lar): virgülle ayırabilirsiniz. Boş kalırsa kullanıcı kendi e-postasını seçer.
+      const FORM_ENDPOINT = "https://script.google.com/macros/s/AKfycbyRbIuOz0i26zueKbtaEiAw2qmP1j_GV7iShll6odwGWKfYe4HYteQGyruIERepauHA-Q/exec";
+      const SECRET_TOKEN = "DEGISTIRIN"; // <-- Bunu değiştirin (Apps Script TOKEN ile aynı)
 
       const f = document.getElementById('f');
       const preview = document.getElementById('preview');
@@ -153,7 +151,8 @@
       const stateDot = document.getElementById('stateDot');
       const stateText = document.getElementById('stateText');
 
-      const STORAGE_KEY = 'dergi_oneri_draft_v1';
+      const STORAGE_KEY = 'dergi_oneri_draft_v2';
+      const NL = String.fromCharCode(10);
 
       restoreDraft();
       updatePreview();
@@ -172,9 +171,8 @@
       btnCopy.addEventListener('click', async () => {
         clearMsg();
         const data = collect();
-        const text = formatText(data);
         try{
-          await navigator.clipboard.writeText(text);
+          await navigator.clipboard.writeText(formatText(data));
           toastMsg('Öneri metni kopyalandı.');
         } catch(_){
           toastMsg('Kopyalama yapılamadı. Önizlemeden manuel kopyalayabilirsiniz.');
@@ -184,6 +182,7 @@
       f.addEventListener('submit', async (e) => {
         e.preventDefault();
         clearMsg();
+
         const errors = validate();
         if (errors.length){
           showErr(errors);
@@ -191,40 +190,32 @@
           return;
         }
 
-        const data = collect();
-
-        // 1) Endpoint varsa POST et
-        if (FORM_ENDPOINT){
-          try{
-            setState('sending');
-            const res = await fetch(FORM_ENDPOINT, {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify(data)
-            });
-            if (!res.ok) throw new Error('Sunucu hata döndürdü: ' + res.status);
-
-            localStorage.removeItem(STORAGE_KEY);
-            toastMsg('Teşekkürler! Öneriniz kaydedildi.');
-            setState('ok');
-            f.reset();
-            updatePreview();
-            return;
-          } catch (ex){
-            // Endpoint başarısızsa mailto fallback
-            showErr(['Endpoint ile gönderim başarısız. E-posta yöntemiyle devam edebilirsiniz.', String(ex.message || ex)]);
-            setState('bad');
-          }
+        if (!SECRET_TOKEN || SECRET_TOKEN === 'DEGISTIRIN'){
+          showErr(['SECRET_TOKEN ayarlanmamış. index.html içinde SECRET_TOKEN’u değiştirin (Apps Script TOKEN ile aynı olmalı).']);
+          setState('bad');
+          return;
         }
 
-        // 2) Varsayılan: mailto
-        const subject = encodeURIComponent('Online Dergi Önerisi: ' + data.title);
-        const body = encodeURIComponent(formatText(data));
-        const mailto = `mailto:${encodeURIComponent(MAIL_TO)}?subject=${subject}&body=${body}`;
-        window.location.href = mailto;
+        const data = collect();
 
-        toastMsg('E-posta taslağı açıldı. Gönderince öneriniz iletilmiş olur.');
-        setState('ok');
+        try{
+          setState('sending');
+
+          const params = new URLSearchParams();
+          params.set('token', SECRET_TOKEN);
+          params.set('payload', JSON.stringify(data));
+
+          await fetch(FORM_ENDPOINT, { method: 'POST', mode: 'no-cors', body: params });
+
+          localStorage.removeItem(STORAGE_KEY);
+          toastMsg('Teşekkürler! Öneriniz Google Sheets’e kaydedildi.');
+          setState('ok');
+          f.reset();
+          updatePreview();
+        } catch(ex){
+          showErr(['Gönderim sırasında hata oluştu.', String(ex && ex.message ? ex.message : ex)]);
+          setState('bad');
+        }
       });
 
       function validate(){
@@ -240,16 +231,27 @@
         if (!detail) errors.push('Öneri detayı zorunludur.');
 
         const email = val('email');
-        if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) errors.push('E-posta formatı geçersiz görünüyor.');
-
-        // URL kontrolü (yumuşak)
-        const links = val('links');
-        if (links){
-          const parts = links.split(',').map(s=>s.trim()).filter(Boolean);
-          const bad = parts.filter(u => !/^https?:\/\//i.test(u));
-          if (bad.length) errors.push('Bağlantılar https:// veya http:// ile başlamalı (virgülle ayırın).');
+        if (email){
+          if (email.indexOf('@') < 1 || email.indexOf('.') < 3) errors.push('E-posta formatı geçersiz görünüyor.');
         }
 
+        const links = val('links');
+        if (links){
+          const parts = links.split(',').map(s => s.trim()).filter(Boolean);
+          for (const u of parts){
+            let ok = false;
+            try{
+              const url = new URL(u);
+              ok = (url.protocol === 'http:' || url.protocol === 'https:');
+            } catch(_){
+              ok = false;
+            }
+            if (!ok){
+              errors.push('Bağlantılar http:// veya https:// ile başlamalı (virgülle ayırın).');
+              break;
+            }
+          }
+        }
         return errors;
       }
 
@@ -262,38 +264,39 @@
           title: val('title'),
           links: val('links'),
           detail: val('detail'),
-          meta: { createdAt: new Date().toISOString(), source: 'github-pages-form' }
+          meta: {
+            createdAt: new Date().toISOString(),
+            source: 'github-pages-form',
+            userAgent: navigator.userAgent
+          }
         };
       }
 
       function formatText(d){
-        return [
-          `Üniversite: ${d.uni}`,
-          d.person ? `İletişim: ${d.person}` : null,
-          d.email ? `E-posta: ${d.email}` : null,
-          `Öneri Türü: ${d.type}`,
-          `Başlık: ${d.title}`,
-          d.links ? `Bağlantılar: ${d.links}` : null,
-          '',
-          'Detay:',
-          d.detail,
-          '',
-          `Tarih: ${new Date().toLocaleString('tr-TR')}`
-        ].filter(Boolean).join('\n');
+        const lines = [];
+        lines.push('Üniversite: ' + d.uni);
+        if (d.person) lines.push('İletişim: ' + d.person);
+        if (d.email) lines.push('E-posta: ' + d.email);
+        lines.push('Öneri Türü: ' + d.type);
+        lines.push('Başlık: ' + d.title);
+        if (d.links) lines.push('Bağlantılar: ' + d.links);
+        lines.push('');
+        lines.push('Detay:');
+        lines.push(d.detail);
+        lines.push('');
+        lines.push('Tarih: ' + new Date().toLocaleString('tr-TR'));
+        return lines.join(NL);
       }
 
       function updatePreview(){
-        const data = collect();
-        preview.textContent = JSON.stringify(data, null, 2);
+        preview.textContent = JSON.stringify(collect(), null, 2);
       }
 
       function saveDraft(silent){
         try{
           localStorage.setItem(STORAGE_KEY, JSON.stringify(collect()));
           if (!silent) setState('ok');
-        } catch(_){
-          // ignore
-        }
+        } catch(_){ }
       }
 
       function restoreDraft(){
@@ -301,12 +304,12 @@
           const raw = localStorage.getItem(STORAGE_KEY);
           if (!raw) return;
           const d = JSON.parse(raw);
-          for (const [k,v] of Object.entries(d)){
+          for (const k in d){
             const el = document.getElementById(k);
-            if (el && typeof v === 'string') el.value = v;
+            if (el && typeof d[k] === 'string') el.value = d[k];
           }
           setState('draft');
-        } catch(_){/* ignore */}
+        } catch(_){ }
       }
 
       function val(id){
@@ -316,7 +319,7 @@
 
       function showErr(list){
         err.innerHTML = '<b>Kontrol gerekli:</b><ul style="margin:8px 0 0; padding-left:18px;">' +
-          list.map(x => `<li>${escapeHtml(x)}</li>`).join('') +
+          list.map(x => '<li>' + escapeHtml(x) + '</li>').join('') +
           '</ul>';
         err.classList.add('show');
         toast.classList.remove('show');
@@ -326,7 +329,7 @@
         toast.textContent = msg;
         toast.classList.add('show');
         err.classList.remove('show');
-        setTimeout(()=>toast.classList.remove('show'), 4200);
+        setTimeout(() => toast.classList.remove('show'), 4200);
       }
 
       function clearMsg(){
@@ -335,13 +338,12 @@
       }
 
       function setState(s){
-        // ready | draft | sending | ok | bad
         const map = {
           ready:   { dot:'',     text:'Hazır' },
           draft:   { dot:'',     text:'Taslak bulundu' },
           sending: { dot:'',     text:'Gönderiliyor…' },
           ok:      { dot:'ok',   text:'Tamam' },
-          bad:     { dot:'bad',  text:'Kontrol gerekli' },
+          bad:     { dot:'bad',  text:'Kontrol gerekli' }
         };
         const m = map[s] || map.ready;
         stateDot.className = 'dot' + (m.dot ? ' ' + m.dot : '');
@@ -350,13 +352,12 @@
 
       function escapeHtml(s){
         return String(s)
-          .replaceAll('&','&amp;')
-          .replaceAll('<','&lt;')
-          .replaceAll('>','&gt;')
-          .replaceAll('"','&quot;')
-          .replaceAll("'",'&#039;');
+          .split('&').join('&amp;')
+          .split('<').join('&lt;')
+          .split('>').join('&gt;')
+          .split('"').join('&quot;')
+          .split("'").join('&#039;');
       }
-
     })();
   </script>
 </body>
