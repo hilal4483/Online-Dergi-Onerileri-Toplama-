@@ -7,7 +7,13 @@
   <style>
     :root{--bg:#0b1220;--card:#111a2e;--line:#223055;--text:#e9f1ff;--muted:#a8b3cc;--accent:#60a5fa;--ok:#34d399;--bad:#fb7185;--shadow:0 10px 30px rgba(0,0,0,.35);--r:18px;}
     *{box-sizing:border-box}
-    body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial;background:radial-gradient(900px 600px at 20% -10%, rgba(96,165,250,.16), transparent 60%),linear-gradient(180deg,#070b14,var(--bg));color:var(--text);min-height:100vh;}
+    body{
+      margin:0;
+      font-family:system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial;
+      background:radial-gradient(900px 600px at 20% -10%, rgba(96,165,250,.16), transparent 60%),
+                 linear-gradient(180deg,#070b14,var(--bg));
+      color:var(--text);min-height:100vh;
+    }
     .wrap{max-width:920px;margin:28px auto 56px;padding:0 16px;}
     header{display:flex;gap:12px;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;margin-bottom:14px}
     .brand{display:flex;gap:12px;align-items:center}
@@ -21,12 +27,28 @@
     @media(max-width:720px){.row{grid-template-columns:1fr}}
     label{display:block;color:var(--muted);font-size:12px;margin:0 0 6px}
     .req{color:#fbbf24;font-weight:700;margin-left:4px}
-    input,select,textarea{width:100%;padding:11px 12px;border-radius:12px;border:1px solid rgba(34,48,85,.9);background:rgba(7,11,20,.55);color:var(--text);outline:none}
+    input,select,textarea{
+      width:100%;
+      padding:11px 12px;
+      border-radius:12px;
+      border:1px solid rgba(34,48,85,.9);
+      background:rgba(7,11,20,.55);
+      color:var(--text);
+      outline:none
+    }
     textarea{min-height:120px;resize:vertical}
     input:focus,select:focus,textarea:focus{border-color:rgba(96,165,250,.75);box-shadow:0 0 0 3px rgba(96,165,250,.25)}
     .hint{color:var(--muted);font-size:11.5px;line-height:1.35;margin-top:6px}
     .actions{display:flex;gap:10px;align-items:center;justify-content:space-between;flex-wrap:wrap;margin-top:10px;padding-top:12px;border-top:1px solid rgba(34,48,85,.65)}
-    button{cursor:pointer;border-radius:12px;border:1px solid rgba(34,48,85,.9);background:rgba(17,26,46,.7);color:var(--text);padding:10px 12px;font-weight:650;font-size:12.5px}
+    button{
+      cursor:pointer;border-radius:12px;
+      border:1px solid rgba(34,48,85,.9);
+      background:rgba(17,26,46,.7);
+      color:var(--text);
+      padding:10px 12px;
+      font-weight:650;
+      font-size:12.5px
+    }
     button:hover{border-color:rgba(96,165,250,.55)}
     .primary{background:linear-gradient(135deg, rgba(96,165,250,.95), rgba(52,211,153,.8));border-color:transparent;color:#041019}
     .ghost{background:transparent}
@@ -38,7 +60,12 @@
     .toast.show{display:block}
     .err{display:none;margin-top:10px;padding:10px 12px;border-radius:14px;border:1px solid rgba(251,113,133,.35);background:rgba(251,113,133,.10);color:#ffe1e7;font-size:12px;line-height:1.4}
     .err.show{display:block}
-    .preview{margin-top:12px;padding:12px;border-radius:14px;border:1px solid rgba(34,48,85,.75);background:rgba(7,11,20,.45);font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,"Liberation Mono","Courier New",monospace;font-size:12px;white-space:pre-wrap;max-height:280px;overflow:auto}
+    .preview{
+      margin-top:12px;padding:12px;border-radius:14px;border:1px solid rgba(34,48,85,.75);
+      background:rgba(7,11,20,.45);
+      font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,"Liberation Mono","Courier New",monospace;
+      font-size:12px;white-space:pre-wrap;max-height:260px;overflow:auto
+    }
     footer{margin-top:12px;color:var(--muted);font-size:11.5px;line-height:1.45}
     .k{display:inline-block;padding:2px 6px;border-radius:8px;border:1px solid rgba(34,48,85,.85);background:rgba(7,11,20,.45);font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,"Liberation Mono","Courier New",monospace;font-size:11px;color:var(--muted)}
   </style>
@@ -50,7 +77,10 @@
         <div class="logo" aria-hidden="true"></div>
         <div>
           <h1>Online Dergi Öneri Formu</h1>
-          <p class="sub">Başvuru değil — sadece öneri toplamak için basit form. <b>Tek tık “Gönder”</b> ile öneriler <span class="k">Google Sheets</span>’e kaydedilir (Google Apps Script Web App).</p>
+          <p class="sub">
+            Başvuru değil — sadece öneri toplamak için basit form.
+            <b>Tek tık “Gönder”</b> ile öneriler <span class="k">Google Sheets</span>’e kaydedilir.
+          </p>
         </div>
       </div>
       <div class="pill" role="status" aria-live="polite">
@@ -113,11 +143,13 @@
           </div>
 
           <div class="actions">
-            <div class="hint">Kurulum: <span class="k">SECRET_TOKEN</span>’u değiştirin ve Apps Script’teki TOKEN ile aynı yapın.</div>
+            <div class="hint">
+              <span class="k">SECRET_TOKEN</span> Apps Script’teki <span class="k">TOKEN</span> ile aynı olmalı.
+            </div>
             <div style="display:flex;gap:10px;flex-wrap:wrap">
               <button type="button" class="ghost" id="btnCopy">Kopyala</button>
               <button type="button" class="ghost" id="btnDraft">Taslak Kaydet</button>
-              <button type="submit" class="primary">Öneriyi Gönder</button>
+              <button type="submit" class="primary" id="btnSend">Öneriyi Gönder</button>
             </div>
           </div>
 
@@ -127,7 +159,7 @@
           <div class="preview" id="preview" aria-label="Önizleme"></div>
 
           <footer>
-            <b>Google Sheets:</b> Gönder butonu Apps Script Web App’e POST atar ve Sheet’e satır ekler.
+            Not: Statik site olduğu için gönderim <span class="k">no-cors</span> ile yapılır; en kesin kontrol Google Sheet’te yeni satırın oluşmasıdır.
           </footer>
         </form>
       </div>
@@ -136,11 +168,12 @@
 
   <script>
     (function(){
-      // Google Sheets entegrasyonu (GitHub Pages uyumlu)
-      // NOT: no-cors ile gönderiyoruz; tarayıcı cevap okuyamaz ama Sheet'e yazma çalışır.
-
+      // ✅ Endpoint: sizin /exec URL'niz
       const FORM_ENDPOINT = "https://script.google.com/macros/s/AKfycbyRbIuOz0i26zueKbtaEiAw2qmP1j_GV7iShll6odwGWKfYe4HYteQGyruIERepauHA-Q/exec";
-      const SECRET_TOKEN = "1212"; // <-- Bunu değiştirin (Apps Script TOKEN ile aynı)
+
+      // 🔐 Burayı Apps Script TOKEN ile aynı yapın:
+      // Örn. Apps Script'te TOKEN = "1212" ise burada da "1212" olmalı.
+      const SECRET_TOKEN = "1212";
 
       const f = document.getElementById('f');
       const preview = document.getElementById('preview');
@@ -148,10 +181,11 @@
       const toast = document.getElementById('toast');
       const btnCopy = document.getElementById('btnCopy');
       const btnDraft = document.getElementById('btnDraft');
+      const btnSend = document.getElementById('btnSend');
       const stateDot = document.getElementById('stateDot');
       const stateText = document.getElementById('stateText');
 
-      const STORAGE_KEY = 'dergi_oneri_draft_v2';
+      const STORAGE_KEY = 'dergi_oneri_draft_v3';
       const NL = String.fromCharCode(10);
 
       restoreDraft();
@@ -190,8 +224,8 @@
           return;
         }
 
-        if (!SECRET_TOKEN || SECRET_TOKEN === 'DEGISTIRIN'){
-          showErr(['SECRET_TOKEN ayarlanmamış. index.html içinde SECRET_TOKEN’u değiştirin (Apps Script TOKEN ile aynı olmalı).']);
+        if (!SECRET_TOKEN){
+          showErr(['SECRET_TOKEN boş. index.html içinde SECRET_TOKEN’u Apps Script TOKEN ile aynı yapın.']);
           setState('bad');
           return;
         }
@@ -200,21 +234,30 @@
 
         try{
           setState('sending');
+          btnSend.disabled = true;
 
           const params = new URLSearchParams();
           params.set('token', SECRET_TOKEN);
           params.set('payload', JSON.stringify(data));
 
-          await fetch(FORM_ENDPOINT, { method: 'POST', mode: 'no-cors', body: params });
+          // no-cors: cevap okunamaz ama Apps Script Sheet'e yazabilir.
+          await fetch(FORM_ENDPOINT, {
+            method: 'POST',
+            mode: 'no-cors',
+            body: params,
+            keepalive: true
+          });
 
           localStorage.removeItem(STORAGE_KEY);
-          toastMsg('Teşekkürler! Öneriniz Google Sheets’e kaydedildi.');
+          toastMsg('Gönderildi. Sheet’te yeni satırı kontrol edin.');
           setState('ok');
           f.reset();
           updatePreview();
         } catch(ex){
-          showErr(['Gönderim sırasında hata oluştu.', String(ex && ex.message ? ex.message : ex)]);
+          showErr(['Gönderim sırasında hata oluştu (ağ/erişim).', String(ex && ex.message ? ex.message : ex)]);
           setState('bad');
+        } finally {
+          btnSend.disabled = false;
         }
       });
 
